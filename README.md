@@ -35,7 +35,7 @@ device drivers -> network device support -> ethernet driver support -> xilinx ->
 ```
 
 To use this now compiled driver you also need to update your device-tree, but this is very specific to your setup. A proper device-entry would look like this, though it is up to you to know your own system.
-```json
+```
 // in the amba section
   ...
 	gem0: ethernet@e000b000 {
