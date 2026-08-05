@@ -773,7 +773,11 @@ static void xemacps_adjust_link(struct net_device *ndev)
 				return;
 			}
 			if (lp->timerready && phydev->speed != SPEED_1000) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,14,0)
+				timer_delete_sync(&lp->gen_purpose_timer);
+#else
 				del_timer_sync(&lp->gen_purpose_timer);
+#endif
 				lp->timerready = false;
 			}
 
@@ -1021,7 +1025,11 @@ static void xemacps_reset_hw(struct net_local *lp)
  */
 static void xemacps_time_keep(struct timer_list *t)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,16,0)
+	struct net_local *lp = timer_container_of(lp, t, time_keep);
+#else
 	struct net_local *lp = from_timer(lp, t, time_keep);
+#endif
 	u64 ns;
 	unsigned long flags;
 
@@ -1052,7 +1060,11 @@ static inline void xemacps_ptp_read(struct net_local *lp, struct timespec64 *ts)
  * @cc: Cyclecounter structure
  * Return: Hw time stamp
  */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,17,0)
+static u64 xemacps_read_clock(struct cyclecounter *cc)
+#else
 static u64 xemacps_read_clock(const struct cyclecounter *cc)
+#endif
 {
 	struct net_local *lp = container_of(cc, struct net_local, cc);
 	u64 stamp;
@@ -1320,7 +1332,11 @@ static void xemacps_ptp_close(struct net_local *lp)
 	xemacps_write(lp->baseaddr, XEMACPS_1588ADJ_OFFSET, 0x0);
 	xemacps_write(lp->baseaddr, XEMACPS_1588INC_OFFSET, 0x0);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,15,0)
+	timer_delete(&lp->time_keep);
+#else
 	del_timer(&lp->time_keep);
+#endif
 	ptp_clock_unregister(lp->ptp_clock);
 
 	/* Initialize hwstamp config */
@@ -1948,7 +1964,11 @@ static void xemacps_update_stats(struct net_local *lp)
  */
 static void xemacps_gen_purpose_timerhandler(struct timer_list *t)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,16,0)
+	struct net_local *lp = timer_container_of(lp, t, gen_purpose_timer);
+#else
 	struct net_local *lp = from_timer(lp, t, gen_purpose_timer);
+#endif
 
 	xemacps_update_stats(lp);
 	xemacps_resetrx_for_no_rxdata(lp);
@@ -2016,7 +2036,11 @@ err_pm_put:
 	napi_disable(&lp->napi);
 	xemacps_reset_hw(lp);
 	if (lp->timerready) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,14,0)
+		timer_delete_sync(&lp->gen_purpose_timer);
+#else
 		del_timer_sync(&lp->gen_purpose_timer);
+#endif
 		lp->timerready = false;
 	}
 	pm_runtime_put(&lp->pdev->dev);
@@ -2041,7 +2065,11 @@ static int xemacps_close(struct net_device *ndev)
 	struct net_local *lp = netdev_priv(ndev);
 
 	if (lp->timerready)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,14,0)
+		timer_delete_sync(&lp->gen_purpose_timer);
+#else
 		del_timer_sync(&lp->gen_purpose_timer);
+#endif
 	netif_stop_queue(ndev);
 	napi_disable(&lp->napi);
 	tasklet_disable(&lp->tx_bdreclaim_tasklet);
