@@ -2825,8 +2825,6 @@ static int xemacps_probe(struct platform_device *pdev)
 		goto err_out_clk_dis_all;
 	}
 
-	lp->phy_interface = rc;
-
 	/* Set MDIO clock divider */
 	regval = (MDC_DIV_224 << XEMACPS_NWCFG_MDC_SHIFT_MASK);
 	xemacps_write(lp->baseaddr, XEMACPS_NWCFG_OFFSET, regval);
